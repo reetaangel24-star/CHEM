@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   FlaskConical, LogOut, Users, Calendar, BarChart2,
-  Download, Search, ChevronDown, RefreshCw, BookOpen,
-  TrendingUp, Clock, Award, AlertTriangle, CheckCircle,
-  Shield, Activity, Eye, Filter, FileText, Plus, X
+  Download, Search, ChevronDown, RefreshCw,
+  TrendingUp, Award, AlertTriangle, CheckCircle,
+  Shield, Activity, Eye, FileText, Plus, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -170,7 +170,7 @@ export default function AdminDashboard() {
               <StudentsTab students={studentsWithStats} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
             )}
             {activeTab === 'experiments' && (
-              <ExperimentsTab experiments={experiments} results={results} onCreateClick={() => setShowCreateExp(true)} onExperimentAdded={loadData} />
+              <ExperimentsTab experiments={experiments} results={results} onCreateClick={() => setShowCreateExp(true)} />
             )}
             {activeTab === 'reports' && (
               <ReportsTab attendance={attendance} students={students} results={results} experiments={experiments} />
@@ -611,11 +611,10 @@ function StudentsTab({ students, searchQuery, setSearchQuery }: { students: Stud
   );
 }
 
-function ExperimentsTab({ experiments, results, onCreateClick, onExperimentAdded }: {
+function ExperimentsTab({ experiments, results, onCreateClick }: {
   experiments: Experiment[];
   results: ExperimentResult[];
   onCreateClick: () => void;
-  onExperimentAdded: () => void;
 }) {
   return (
     <div className="space-y-4 max-w-5xl">

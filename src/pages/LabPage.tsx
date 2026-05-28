@@ -1,8 +1,8 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Send, Bot, FlaskConical, CheckCircle, AlertTriangle,
-  Play, ChevronRight, RotateCcw, FileDown, Thermometer, Droplets, Eye, Lightbulb
+  ArrowLeft, Send, Bot, FlaskConical, CheckCircle,
+  ChevronRight, FileDown, Thermometer, Droplets, Eye, Lightbulb
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, Experiment, ExperimentStep } from '../lib/supabase';
@@ -519,9 +519,7 @@ export default function LabPage() {
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 relative">
             <ThreeLabCanvas
-              experimentTitle={experiment.title}
               reactionColor={reactionState.color}
-              currentStep={currentStep}
               hasGas={reactionState.gasProduced}
               hasPrecipitate={reactionState.hasPrecipitate}
             />

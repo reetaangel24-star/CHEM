@@ -2,9 +2,7 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 interface Props {
-  experimentTitle: string;
   reactionColor: string;
-  currentStep: number;
   hasGas: boolean;
   hasPrecipitate: boolean;
 }
@@ -16,7 +14,7 @@ function hexToRGB(hex: string): { r: number; g: number; b: number } {
     : { r: 0.9, g: 0.95, b: 1 };
 }
 
-export default function ThreeLabCanvas({ experimentTitle, reactionColor, currentStep, hasGas, hasPrecipitate }: Props) {
+export default function ThreeLabCanvas({ reactionColor, hasGas, hasPrecipitate }: Props) {
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<{
     renderer: THREE.WebGLRenderer;
@@ -254,9 +252,6 @@ export default function ThreeLabCanvas({ experimentTitle, reactionColor, current
     stirrer.position.set(0.1, 0.5, 0);
     stirrer.rotation.z = 0.3;
     beakerGroup.add(stirrer);
-
-    // --- Labels (using simple boxes for label backing) ---
-    const labelMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1 });
 
     // Gas particle system
     const particles: THREE.Points[] = [];
