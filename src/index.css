@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-bg: #030712;
+  --color-surface: #0f172a;
+  --color-surface-2: #1e293b;
+  --color-border: #334155;
+  --color-primary: #00e5ff;
+  --color-primary-dim: rgba(0, 229, 255, 0.15);
+  --color-success: #22c55e;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5 {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.glow-cyan {
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.3);
+}
+
+.glow-text {
+  text-shadow: 0 0 20px rgba(0, 229, 255, 0.5);
+}
+
+.glass {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.lab-btn {
+  @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 cursor-pointer;
+}
+
+.lab-btn-primary {
+  @apply lab-btn bg-cyan-500 text-gray-900 hover:bg-cyan-400 active:scale-95;
+}
+
+.lab-btn-ghost {
+  @apply lab-btn border border-slate-600 text-slate-300 hover:border-cyan-500 hover:text-cyan-400;
+}
+
+.lab-btn-danger {
+  @apply lab-btn bg-red-500/20 text-red-400 border border-red-500/40 hover:bg-red-500/30;
+}
+
+.lab-input {
+  @apply w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500
+         focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/40 transition-all;
+}
+
+.lab-card {
+  @apply bg-slate-900 border border-slate-800 rounded-xl p-5;
+}
+
+.stat-card {
+  @apply bg-slate-900 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-colors;
+}
+
+.badge {
+  @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-cyan { @apply badge bg-cyan-500/20 text-cyan-400; }
+.badge-green { @apply badge bg-green-500/20 text-green-400; }
+.badge-yellow { @apply badge bg-yellow-500/20 text-yellow-400; }
+.badge-red { @apply badge bg-red-500/20 text-red-400; }
+.badge-slate { @apply badge bg-slate-700 text-slate-300; }
+.badge-amber { @apply badge bg-amber-500/20 text-amber-400; }
