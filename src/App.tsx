@@ -30,7 +30,16 @@ function ProtectedRoute({ children, requiredRole }: { children: React.ReactEleme
 
 function RootRedirect() {
   const { session, profile, loading } = useAuth();
-  if (loading) return null;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-full h-full bg-gray-950">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-slate-400 text-sm">Initializing VR ChemLab...</span>
+        </div>
+      </div>
+    );
+  }
   if (!session) return <Navigate to="/auth" replace />;
   if (profile?.role === 'admin') return <Navigate to="/admin" replace />;
   return <Navigate to="/dashboard" replace />;

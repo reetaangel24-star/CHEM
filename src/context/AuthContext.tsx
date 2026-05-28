@@ -40,10 +40,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id).finally(() => setLoading(false));
+        fetchProfile(session.user.id).catch(e => {
+          console.error('Failed to fetch profile:', e);
+        }).finally(() => setLoading(false));
       } else {
         setLoading(false);
       }
+    }).catch(e => {
+      console.error('Failed to get session:', e);
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
