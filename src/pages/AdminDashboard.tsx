@@ -3,7 +3,7 @@ import {
   FlaskConical, LogOut, Users, Calendar, BarChart2,
   Download, Search, ChevronDown, RefreshCw, BookOpen,
   TrendingUp, Clock, Award, AlertTriangle, CheckCircle,
-  Shield, Activity, Eye, Filter, FileText
+  Shield, Activity, Eye, Filter, FileText, Plus, X
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [dateFilter, setDateFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [showCreateExp, setShowCreateExp] = useState(false);
 
   useEffect(() => { loadData(); }, []);
 
@@ -169,7 +170,7 @@ export default function AdminDashboard() {
               <StudentsTab students={studentsWithStats} searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
             )}
             {activeTab === 'experiments' && (
-              <ExperimentsTab experiments={experiments} results={results} />
+              <ExperimentsTab experiments={experiments} results={results} onCreateClick={() => setShowCreateExp(true)} onExperimentAdded={loadData} />
             )}
             {activeTab === 'reports' && (
               <ReportsTab attendance={attendance} students={students} results={results} experiments={experiments} />
@@ -177,6 +178,14 @@ export default function AdminDashboard() {
           </>
         )}
       </main>
+
+      {/* Create experiment modal */}
+      {showCreateExp && (
+        <CreateExperimentModal
+          onClose={() => setShowCreateExp(false)}
+          onSuccess={() => { setShowCreateExp(false); loadData(); }}
+        />
+      )}
     </div>
   );
 }
@@ -602,12 +611,26 @@ function StudentsTab({ students, searchQuery, setSearchQuery }: { students: Stud
   );
 }
 
-function ExperimentsTab({ experiments, results }: { experiments: Experiment[]; results: ExperimentResult[] }) {
+function ExperimentsTab({ experiments, results, onCreateClick, onExperimentAdded }: {
+  experiments: Experiment[];
+  results: ExperimentResult[];
+  onCreateClick: () => void;
+  onExperimentAdded: () => void;
+}) {
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-white">Experiment Management</h2>
-        <span className="badge badge-amber">{experiments.length} experiments</span>
+        <div className="flex items-center gap-3">
+          <span className="badge badge-amber">{experiments.length} experiments</span>
+          <button
+            onClick={onCreateClick}
+            className="flex items-center gap-2 px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-gray-900 rounded-lg text-sm font-semibold transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            New Experiment
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -859,6 +882,344 @@ function ReportsTab({ attendance, students, results, experiments }: {
             </tbody>
           </table>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function CreateExperimentModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () => void }) {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: '',
+    difficulty: 'beginner',
+    estimated_duration_minutes: 30,
+    objectives: [''],
+    chemicals: [''],
+    equipment: [''],
+    safety_notes: [''],
+    steps: [{ step: 1, title: '', desc: '' }],
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  function updateField(field: string, value: unknown) {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  }
+
+  function updateArray(field: string, index: number, value: string) {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).map((item, i) => i === index ? value : item),
+    }));
+  }
+
+  function addArrayItem(field: string) {
+    setFormData(prev => ({
+      ...prev,
+      [field]: [...(prev[field as keyof typeof prev] as string[]), ''],
+    }));
+  }
+
+  function removeArrayItem(field: string, index: number) {
+    setFormData(prev => ({
+      ...prev,
+      [field]: (prev[field as keyof typeof prev] as string[]).filter((_, i) => i !== index),
+    }));
+  }
+
+  function updateStep(index: number, field: string, value: string) {
+    setFormData(prev => ({
+      ...prev,
+      steps: prev.steps.map((s, i) => i === index ? { ...s, [field]: value } : s),
+    }));
+  }
+
+  function addStep() {
+    setFormData(prev => ({
+      ...prev,
+      steps: [...prev.steps, { step: prev.steps.length + 1, title: '', desc: '' }],
+    }));
+  }
+
+  function removeStep(index: number) {
+    setFormData(prev => ({
+      ...prev,
+      steps: prev.steps.filter((_, i) => i !== index),
+    }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!formData.title.trim()) { setError('Title is required'); return; }
+    if (!formData.description.trim()) { setError('Description is required'); return; }
+
+    setLoading(true);
+    setError('');
+
+    const { error: err } = await supabase.from('experiments').insert({
+      title: formData.title,
+      description: formData.description,
+      category: formData.category || 'General',
+      difficulty: formData.difficulty,
+      estimated_duration_minutes: formData.estimated_duration_minutes,
+      objectives: formData.objectives.filter(o => o.trim()),
+      chemicals: formData.chemicals.filter(c => c.trim()),
+      equipment: formData.equipment.filter(e => e.trim()),
+      safety_notes: formData.safety_notes.filter(s => s.trim()),
+      steps: formData.steps.filter(st => st.title.trim() && st.desc.trim()),
+      is_active: true,
+    });
+
+    if (err) {
+      setError(err.message);
+      setLoading(false);
+      return;
+    }
+
+    onSuccess();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-800 rounded-xl w-full max-w-2xl my-8">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 sticky top-0 bg-slate-900">
+          <h2 className="text-lg font-bold text-white flex items-center gap-2">
+            <Plus className="w-5 h-5 text-cyan-400" />
+            Create New Experiment
+          </h2>
+          <button onClick={onClose} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-200 transition-colors">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto max-h-[calc(100vh-200px)]">
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={e => updateField('title', e.target.value)}
+                placeholder="e.g., Acid-Base Titration"
+                className="lab-input"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Category</label>
+              <input
+                type="text"
+                value={formData.category}
+                onChange={e => updateField('category', e.target.value)}
+                placeholder="e.g., Analytical Chemistry"
+                className="lab-input"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-1.5">Description *</label>
+            <textarea
+              value={formData.description}
+              onChange={e => updateField('description', e.target.value)}
+              placeholder="Detailed experiment description..."
+              className="lab-input resize-none h-20"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Difficulty</label>
+              <select value={formData.difficulty} onChange={e => updateField('difficulty', e.target.value)} className="lab-input">
+                <option value="beginner">Beginner</option>
+                <option value="intermediate">Intermediate</option>
+                <option value="advanced">Advanced</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-300 mb-1.5">Duration (min)</label>
+              <input
+                type="number"
+                value={formData.estimated_duration_minutes}
+                onChange={e => updateField('estimated_duration_minutes', parseInt(e.target.value))}
+                className="lab-input"
+                min="5"
+              />
+            </div>
+          </div>
+
+          {/* Objectives */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">Learning Objectives</label>
+              <button type="button" onClick={() => addArrayItem('objectives')} className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400">
+                Add
+              </button>
+            </div>
+            <div className="space-y-2">
+              {formData.objectives.map((obj, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={obj}
+                    onChange={e => updateArray('objectives', i, e.target.value)}
+                    placeholder="e.g., Understand titration principles"
+                    className="lab-input text-sm flex-1"
+                  />
+                  {formData.objectives.length > 1 && (
+                    <button type="button" onClick={() => removeArrayItem('objectives', i)} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Chemicals */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">Chemicals Required</label>
+              <button type="button" onClick={() => addArrayItem('chemicals')} className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400">
+                Add
+              </button>
+            </div>
+            <div className="space-y-2">
+              {formData.chemicals.map((chem, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={chem}
+                    onChange={e => updateArray('chemicals', i, e.target.value)}
+                    placeholder="e.g., HCl (0.1M)"
+                    className="lab-input text-sm flex-1"
+                  />
+                  {formData.chemicals.length > 1 && (
+                    <button type="button" onClick={() => removeArrayItem('chemicals', i)} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Equipment */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">Equipment Needed</label>
+              <button type="button" onClick={() => addArrayItem('equipment')} className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400">
+                Add
+              </button>
+            </div>
+            <div className="space-y-2">
+              {formData.equipment.map((eq, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={eq}
+                    onChange={e => updateArray('equipment', i, e.target.value)}
+                    placeholder="e.g., Burette"
+                    className="lab-input text-sm flex-1"
+                  />
+                  {formData.equipment.length > 1 && (
+                    <button type="button" onClick={() => removeArrayItem('equipment', i)} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Safety Notes */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">Safety Precautions</label>
+              <button type="button" onClick={() => addArrayItem('safety_notes')} className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400">
+                Add
+              </button>
+            </div>
+            <div className="space-y-2">
+              {formData.safety_notes.map((note, i) => (
+                <div key={i} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={note}
+                    onChange={e => updateArray('safety_notes', i, e.target.value)}
+                    placeholder="e.g., Wear safety goggles"
+                    className="lab-input text-sm flex-1"
+                  />
+                  {formData.safety_notes.length > 1 && (
+                    <button type="button" onClick={() => removeArrayItem('safety_notes', i)} className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded">
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Steps */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">Experiment Steps</label>
+              <button type="button" onClick={addStep} className="text-xs px-2 py-1 bg-slate-800 hover:bg-slate-700 rounded text-cyan-400">
+                Add Step
+              </button>
+            </div>
+            <div className="space-y-3">
+              {formData.steps.map((step, i) => (
+                <div key={i} className="bg-slate-800/50 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-400">Step {step.step}</span>
+                    {formData.steps.length > 1 && (
+                      <button type="button" onClick={() => removeStep(i)} className="text-red-400 hover:text-red-300">
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    type="text"
+                    value={step.title}
+                    onChange={e => updateStep(i, 'title', e.target.value)}
+                    placeholder="Step title"
+                    className="lab-input text-sm"
+                  />
+                  <textarea
+                    value={step.desc}
+                    onChange={e => updateStep(i, 'desc', e.target.value)}
+                    placeholder="Step description"
+                    className="lab-input text-sm resize-none h-16"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2.5 bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-gray-900 rounded-lg font-medium transition-colors"
+            >
+              {loading ? 'Creating...' : 'Create Experiment'}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

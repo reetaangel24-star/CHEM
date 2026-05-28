@@ -28,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .eq('id', userId)
       .maybeSingle();
     setProfile(data);
+    return data;
   }
 
   async function refreshProfile() {
@@ -63,8 +64,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signIn(email: string, password: string) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
+    if (data.session) {
+      setSession(data.session);
+      setUser(data.session.user);
+      setLoading(true);
+      await fetchProfile(data.session.user.id);
+      setLoading(false);
+    }
     return { error: null };
   }
 
